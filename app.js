@@ -61,8 +61,8 @@ const newsService = (function () {
   const apiUrl = 'https://news-api-v2.herokuapp.com';
 
   return {
-    topHeadlines(country = 'us', cb) {
-      http.get(`${apiUrl}/top-headlines?country=${country}&category=technology&apiKey=${apiKey}`, cb);
+    topHeadlines(category = 'general', cb) {
+      http.get(`${apiUrl}/top-headlines?country=us&category=${category}&apiKey=${apiKey}`, cb);
     },
     everything(query, cb) {
       http.get(`${apiUrl}/everything?q=${query}&apiKey=${apiKey}`, cb);
@@ -72,12 +72,13 @@ const newsService = (function () {
 
 //Elements
 const form = document.forms['newsControls'],
-  countrySelect = form.elements['country'],
+  categorySelect = form.elements['category'],
   searchInput = form.elements['search'];
 
 form.addEventListener('submit', e => {
   e.preventDefault();
   loadNews();
+  searchInput.value = '';
 });
 
 //  init selects
@@ -89,10 +90,10 @@ document.addEventListener('DOMContentLoaded', function () {
 //Load News Function
 function loadNews() {
   showLoader();
-  const country = countrySelect.value,
+  const category = categorySelect.value,
     searchText = searchInput.value;
   if (!searchText) {
-    newsService.topHeadlines(country, onGetResponse);
+    newsService.topHeadlines(category, onGetResponse);
   } else {
     newsService.everything(searchText, onGetResponse);
   }
@@ -124,6 +125,11 @@ function renderNews(news) {
     fragment += el;
   });
   newsContainer.insertAdjacentHTML('afterbegin', fragment);
+
+  const imgList = document.querySelectorAll('.card-image img');
+  imgList.forEach(img => {
+    img.onerror = () => img.setAttribute('src', 'https://www.andromo.com/blog/wp-content/uploads/2020/12/news-1.jpg');
+  });
 }
 
 //Function clear container
@@ -141,7 +147,7 @@ function newsTemplate({ urlToImage, title, url, description }) {
   <div class="col s12">
     <div class="card">
       <div class="card-image">
-        <img src="${urlToImage}">
+        <img src="${urlToImage === null ? 'https://www.andromo.com/blog/wp-content/uploads/2020/12/news-1.jpg' : urlToImage}">
         <span class="card-title">${title || ''}</span>
       </div>
       <div class="card-content">
