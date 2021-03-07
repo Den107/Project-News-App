@@ -70,6 +70,16 @@ const newsService = (function () {
   };
 })();
 
+//Elements
+const form = document.forms['newsControls'],
+  countrySelect = form.elements['country'],
+  searchInput = form.elements['search'];
+
+form.addEventListener('submit', e => {
+  e.preventDefault();
+  loadNews();
+});
+
 //  init selects
 document.addEventListener('DOMContentLoaded', function () {
   M.AutoInit();
@@ -78,23 +88,51 @@ document.addEventListener('DOMContentLoaded', function () {
 
 //Load News Function
 function loadNews() {
-  newsService.topHeadlines('us', onGetResponse);
+  showLoader();
+  const country = countrySelect.value,
+    searchText = searchInput.value;
+  if (!searchText) {
+    newsService.topHeadlines(country, onGetResponse);
+  } else {
+    newsService.everything(searchText, onGetResponse);
+  }
 }
 
 //Function on get response on server
 function onGetResponse(err, res) {
+  removePreloader();
+  if (err) {
+    showAlert(err, 'error-msg');
+    return;
+  }
+  if (!res.articles.length) {
+    showAlert('Sorry, no news available', 'error-msg');
+    return;
+  }
   renderNews(res.articles);
 }
 
 //Function render news
 function renderNews(news) {
   const newsContainer = document.querySelector('.news-container .row');
+  if (newsContainer.children.length) {
+    clearContainer(newsContainer);
+  }
   let fragment = '';
   news.forEach(newsItem => {
     const el = newsTemplate(newsItem);
     fragment += el;
   });
   newsContainer.insertAdjacentHTML('afterbegin', fragment);
+}
+
+//Function clear container
+function clearContainer(container) {
+  let child = container.lastElementChild;
+  while (child) {
+    container.removeChild(child);
+    child = container.lastElementChild;
+  }
 }
 
 //News item template function
@@ -115,4 +153,26 @@ function newsTemplate({ urlToImage, title, url, description }) {
     </div>
   </div>
 `;
+}
+
+function showAlert(msg, type = '') {
+  M.toast({ html: msg, classes: type });
+}
+
+//Show loader function
+function showLoader() {
+  document.body.insertAdjacentHTML('afterbegin',
+    `
+  <div class="progress">
+  <div class="indeterminate"></div>
+</div>
+`);
+}
+
+//Remove loader function
+function removePreloader() {
+  const loader = document.querySelector('.progress');
+  if (loader) {
+    loader.remove();
+  }
 }
